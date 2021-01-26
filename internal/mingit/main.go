@@ -6,6 +6,7 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
 	"github.com/apparentlymart/go-mingit/mingit"
 )
@@ -34,6 +35,46 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Printf("created tree %s", treeID)
+
+	author := &mingit.Identity{
+		Name:  "Bob Bobbins",
+		Email: "bbobbins@bobco.com",
+		Time:  time.Now(),
+	}
+	commitID, err := repo.WriteCommit(&mingit.Commit{
+		TreeID:    treeID,
+		Message:   "Hello world",
+		Author:    author,
+		Committer: author,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("created commit %s", commitID)
+
+	err = repo.SetRef("refs/heads/main", commitID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("updated refs/heads/main to refer to %s", commitID)
+
+	commitID, err = repo.WriteCommit(&mingit.Commit{
+		TreeID:    treeID,
+		Message:   "Hello world 2",
+		ParentIDs: []mingit.ObjectID{commitID},
+		Author:    author,
+		Committer: author,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("created another commit %s", commitID)
+
+	err = repo.SetRef("refs/heads/main", commitID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("updated refs/heads/main to refer to %s", commitID)
 
 	os.Exit(0)
 }

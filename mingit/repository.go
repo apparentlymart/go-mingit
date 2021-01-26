@@ -125,6 +125,47 @@ func (r *Repository) WriteCommit(commit *Commit) (ObjectID, error) {
 	return r.WriteObject(commit.Object())
 }
 
+// SetRef updates the given ref name to refer to the given object ID. Refs
+// typically refer to either commits or tags, but in principle they can
+// refer to objects of any type.
+//
+// SetRef doesn't validate the given ref name in any way, so it's the caller's
+// responsibility to pass something sensible. Most refs start with the prefix
+// "refs/", but there are a few common ones that don't such as "HEAD" and
+// "FETCH_HEAD". The ref name is a path to a file in the repository directory,
+// so you should avoid passing a path that traverses out of the repository
+// or that would overwrite a non-ref file in the repository.
+//
+// Most normal git implementations also check whether the given target object
+// is a suitable, safe replacement for the currently-present ref, but mingit
+// does not: it just unconditionally overwrites any file already present at
+// the given location.
+func (r *Repository) SetRef(name string, target ObjectID) error {
+	return r.setRefRaw(name, []byte(target.String()))
+}
+
+// SetRefSymbolic is similar to SetRef, but rather than setting the given
+// refer to refer to a particular object it will instead refer to another ref.
+//
+// In typical git use it's conventional for the HEAD ref to be a symbolic
+// ref referring to the currently-selected branch. NewRepository initially sets
+// HEAD to refer to refs/heads/main, so if you intend to use that as your
+// main branch name then you don't need to explicitly reset it using this
+// function.
+func (r *Repository) SetRefSymbolic(updateRef, targetRef string) error {
+	return r.setRefRaw(updateRef, []byte("ref: "+targetRef))
+}
+
+func (r *Repository) setRefRaw(name string, content []byte) error {
+	fullPath := filepath.Join(r.gitDir, name)
+	parentDir := filepath.Dir(fullPath)
+	err := os.MkdirAll(parentDir, 0755)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(fullPath, content, 0644)
+}
+
 const initialConfig = `[core]
 	repositoryformatversion = 0
 	bare = true
