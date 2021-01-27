@@ -82,7 +82,7 @@ func (r *Repository) WriteObject(obj Object) (ObjectID, error) {
 	idStr := id.String()
 	bucketDir := filepath.Join(r.gitDir, "objects", idStr[:2])
 	objFile := filepath.Join(bucketDir, idStr[2:])
-	err := os.Mkdir(bucketDir, 0755)
+	err := os.MkdirAll(bucketDir, 0755)
 	if err != nil {
 		return id, err
 	}
