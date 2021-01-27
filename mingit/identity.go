@@ -1,6 +1,7 @@
 package mingit
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -10,4 +11,8 @@ type Identity struct {
 	Name  string
 	Email string
 	Time  time.Time
+}
+
+func (i Identity) String() string {
+	return fmt.Sprintf("%s <%s> %d +0000", i.Name, i.Email, i.Time.Unix())
 }
